@@ -12,12 +12,7 @@ import {
   ProgressSummary
 } from '../types';
 
-const API_BASE_URL = (
-  import.meta.env.VITE_API_URL ||
-  (typeof window !== 'undefined' && window.location.hostname.includes('vercel.app')
-    ? 'https://ai-study-planner-kitq.onrender.com/api'
-    : '/api')
-).replace(/\/$/, '');
+const API_BASE_URL = (import.meta.env.VITE_API_URL || '/api').replace(/\/$/, '');
 
 const getHeaders = () => {
   const token = localStorage.getItem('auth_token') || 'admin-demo-token';
@@ -26,6 +21,19 @@ const getHeaders = () => {
     'Authorization': `Bearer ${token}`
   };
 };
+
+export async function fetchWithRetry(url: string, options: RequestInit = {}, retries = 1): Promise<Response> {
+  try {
+    const res = await fetch(url, options);
+    return res;
+  } catch (err: any) {
+    if (retries > 0) {
+      await new Promise(r => setTimeout(r, 2000));
+      return fetchWithRetry(url, options, retries - 1);
+    }
+    throw new Error('Server connection error. Render backend might be starting up, please try again in a few seconds.');
+  }
+}
 
 async function handleResponse<T>(res: Response): Promise<T> {
   const contentType = res.headers.get('content-type') || '';
@@ -37,7 +45,7 @@ async function handleResponse<T>(res: Response): Promise<T> {
     } else {
       const text = await res.text().catch(() => '');
       if (text.includes('<!DOCTYPE html>')) {
-        errorMsg = 'Backend API server URL not configured on Vercel. Please set VITE_API_URL environment variable pointing to your Render backend.';
+        errorMsg = 'Backend API server is waking up. Please retry in a few seconds.';
       }
     }
     throw new Error(errorMsg);
@@ -329,7 +337,7 @@ export const api = {
   // Admin
   async getAdminAnalytics(): Promise<any> {
     const token = localStorage.getItem('auth_token') || 'admin-demo-token';
-    const res = await fetch(`${API_BASE_URL}/admin/analytics`, {
+    const res = await fetchWithRetry(`${API_BASE_URL}/admin/analytics`, {
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
@@ -341,7 +349,7 @@ export const api = {
   async getAdminStudents(search?: string): Promise<any[]> {
     const token = localStorage.getItem('auth_token') || 'admin-demo-token';
     const url = search ? `${API_BASE_URL}/admin/students?search=${encodeURIComponent(search)}` : `${API_BASE_URL}/admin/students`;
-    const res = await fetch(url, {
+    const res = await fetchWithRetry(url, {
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
@@ -352,7 +360,7 @@ export const api = {
 
   async createAdminStudent(studentData: any): Promise<any> {
     const token = localStorage.getItem('auth_token') || 'admin-demo-token';
-    const res = await fetch(`${API_BASE_URL}/admin/students`, {
+    const res = await fetchWithRetry(`${API_BASE_URL}/admin/students`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -365,7 +373,7 @@ export const api = {
 
   async createDeptAdmin(deptAdminData: any): Promise<any> {
     const token = localStorage.getItem('auth_token') || 'admin-demo-token';
-    const res = await fetch(`${API_BASE_URL}/admin/dept-admins`, {
+    const res = await fetchWithRetry(`${API_BASE_URL}/admin/dept-admins`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -378,7 +386,7 @@ export const api = {
 
   async getDeptAdmins(): Promise<any[]> {
     const token = localStorage.getItem('auth_token') || 'admin-demo-token';
-    const res = await fetch(`${API_BASE_URL}/admin/dept-admins`, {
+    const res = await fetchWithRetry(`${API_BASE_URL}/admin/dept-admins`, {
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
@@ -389,7 +397,7 @@ export const api = {
 
   async allocateDepartmentSchedule(scheduleData: any): Promise<any> {
     const token = localStorage.getItem('auth_token') || 'admin-demo-token';
-    const res = await fetch(`${API_BASE_URL}/admin/allocate-schedule`, {
+    const res = await fetchWithRetry(`${API_BASE_URL}/admin/allocate-schedule`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
