@@ -517,17 +517,18 @@ Return strictly valid JSON with this exact format:
       return { response: geminiText };
     }
 
-    // Dynamic smart answer fallback
-    if (message.toLowerCase().includes('antigravity')) {
-      return { response: 'Antigravity is Google DeepMind\'s advanced agentic AI coding assistant built to pair-program, design full-stack apps, and solve complex software tasks.' };
+    const lower = message.toLowerCase();
+    if (lower.includes('antigravity')) {
+      return { response: 'Antigravity is Google DeepMind\'s advanced agentic AI coding assistant platform built to pair-program, design full-stack apps, and solve complex software engineering challenges.' };
     }
-    if (message.toLowerCase().includes('tree') || message.toLowerCase().includes('avl')) {
+    if (lower.includes('tree') || lower.includes('avl')) {
       return { response: 'An AVL tree is a self-balancing binary search tree where the height difference (balance factor) between left and right subtrees is at most 1. Imbalances trigger single or double rotations (LL, RR, LR, RL) in O(log N) time.' };
     }
-    if (message.toLowerCase().includes('dbms') || message.toLowerCase().includes('sql') || message.toLowerCase().includes('normal')) {
+    if (lower.includes('dbms') || lower.includes('sql') || lower.includes('normal')) {
       return { response: 'Database Normalization systematically removes data redundancy: 1NF enforces atomic column values, 2NF removes partial key dependencies, and 3NF removes transitive non-key dependencies.' };
     }
-    return { response: `Regarding your query "${message}": Break your study sessions into 25-minute Pomodoro focus blocks, summarize key concepts in your own words, and practice active recall!` };
+
+    return { response: `Analysis for "${message}":\n\nTo master "${message}", analyze its core concepts, break down its primary components, and apply active recall strategies.\n\n💡 (Tip: To enable 100% unrestricted live Google Gemini 1.5 Flash AI answers for any custom prompt, click "⚙️ AI Key" at the top right to paste your free Gemini API key!)` };
   },
 
   async explainTopicAI(subject: string, topic: string, confidence?: string): Promise<any> {
@@ -552,16 +553,19 @@ Return strictly valid JSON with this format:
       }
     }
 
+    const cleanTopic = topic || 'Academic Concept';
+    const cleanSubj = subject || 'Core Coursework';
+
     return {
-      explanation: `${topic} is a foundational pillar of ${subject}.\n\n1. Core Principle: At its core, ${topic} provides a structured mechanism for solving complex academic problems by breaking them down into intuitive components.\n\n2. Key Operational Flow: When working with ${topic}, algorithms systematically process inputs to minimize computational overhead and guarantee accuracy.\n\n3. Academic Context (${confidence || 'Weak'} Confidence Focus): Re-examine core derivations, practice step-by-step problem sets, and review solved exam questions for maximum retention.`,
+      explanation: `Detailed Breakdown of "${cleanTopic}" (${cleanSubj}):\n\n1. Overview & Context: ${cleanTopic} is an essential topic within ${cleanSubj}. Analyzing ${cleanTopic} provides critical insight into functional dynamics, structural analysis, and systemic behavior.\n\n2. Key Operational Flow: The core operational workflow of ${cleanTopic} relies on structured state evaluations and boundary constraints to deliver consistent outcomes.\n\n3. Academic Synthesis (${confidence || 'Weak'} Confidence Focus): To master ${cleanTopic}, focus on active recall of fundamental definitions, work through diagnostic problem sets, and review key case examples.`,
       keyConcepts: [
-        `Fundamental Axioms & Definitions of ${topic}`,
-        `Step-by-step problem-solving methodology`,
-        `Real-world engineering applications & performance trade-offs`
+        `Core Structural Framework & Principles of ${cleanTopic}`,
+        `Operational Sequence & Key Dynamics in ${cleanSubj}`,
+        `Diagnostic Evaluation & Practical Applications of ${cleanTopic}`
       ],
       formulasOrExamples: [
-        `Target Formula / Equation: f(x) = ∑ [ ${topic} Weighting * Cost Matrix ]`,
-        `Practical Example: Input Dataset -> ${topic} Optimization Pipeline -> Verified Solution`
+        `Primary Model: f(${cleanTopic}) = ∑ [ System Weights * Context Matrix ]`,
+        `Practical Case Study: Input Parameters -> ${cleanTopic} Execution -> Outcome Verification`
       ]
     };
   },
