@@ -15,7 +15,7 @@ import {
 const API_BASE_URL = (
   import.meta.env.VITE_API_URL ||
   (typeof window !== 'undefined' && window.location.hostname.includes('vercel.app')
-    ? 'https://ai-study-planner.onrender.com/api'
+    ? 'https://ai-study-planner-kitq.onrender.com/api'
     : '/api')
 ).replace(/\/$/, '');
 
