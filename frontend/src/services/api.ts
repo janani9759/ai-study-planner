@@ -12,7 +12,12 @@ import {
   ProgressSummary
 } from '../types';
 
-const API_BASE_URL = (import.meta.env.VITE_API_URL || '/api').replace(/\/$/, '');
+const API_BASE_URL = (
+  import.meta.env.VITE_API_URL ||
+  (typeof window !== 'undefined' && window.location.hostname.includes('vercel.app')
+    ? 'https://ai-study-planner.onrender.com/api'
+    : '/api')
+).replace(/\/$/, '');
 
 const getHeaders = () => {
   const token = localStorage.getItem('auth_token') || 'admin-demo-token';
