@@ -32,6 +32,15 @@ async function handleResponse<T>(res: Response): Promise<T> {
 
 export const api = {
   // Auth
+  async login(email: string, password?: string, role: string = 'STUDENT'): Promise<{ token: string; user: UserProfile; student?: StudentPreferences }> {
+    const res = await fetch(`${API_BASE_URL}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password, role })
+    });
+    return handleResponse(res);
+  },
+
   async syncProfile(profileData: Partial<UserProfile>): Promise<{ profile: UserProfile }> {
     const res = await fetch(`${API_BASE_URL}/auth/profile`, {
       method: 'POST',

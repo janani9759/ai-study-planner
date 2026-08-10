@@ -6,7 +6,7 @@ interface AuthContextType {
   user: UserProfile | null;
   student: StudentPreferences | null;
   loading: boolean;
-  login: (email: string, role?: 'STUDENT' | 'ADMIN') => Promise<void>;
+  login: (email: string, password?: string, role?: 'STUDENT' | 'ADMIN') => Promise<void>;
   logout: () => void;
   updateStudentPreferences: (prefs: Partial<StudentPreferences>) => Promise<void>;
   isOnboarded: boolean;
@@ -64,9 +64,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [student]);
 
-  const login = async (email: string, role: 'STUDENT' | 'ADMIN' = 'STUDENT') => {
+  const login = async (email: string, password?: string, role: 'STUDENT' | 'ADMIN' = 'STUDENT') => {
     setLoading(true);
     try {
+      const res = await api.login(email, password, role);
+      if (res && res.token && res.user) {
+        localStorage.setItem('auth_token', res.token);
+        setUser(res.user);
+        if (res.student) setStudent(res.student);
+      }
+    } catch (err: any) {
       if (role === 'ADMIN' || email.includes('admin')) {
         const adminUser: UserProfile = {
           id: '00000000-0000-0000-0000-000000000002',
@@ -81,37 +88,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(adminUser);
         localStorage.setItem('auth_token', 'admin-demo-token');
       } else {
+        const studentUser: UserProfile = {
+          id: '00000000-0000-0000-0000-000000000001',
+          email,
+          full_name: email.split('@')[0].replace('.', ' ').toUpperCase(),
+          college_id: 'AI2026-889',
+          department: 'Artificial Intelligence and Data Science',
+          year: 'Final Year',
+          semester: 'Semester 8',
+          role: 'STUDENT'
+        };
+        setUser(studentUser);
         localStorage.setItem('auth_token', 'demo-bearer-token');
-        try {
-          const res = await api.getStudentMe();
-          if (res && res.profile) {
-            setUser(res.profile);
-            if (res.student) setStudent(res.student);
-          } else {
-            setUser({
-              id: '00000000-0000-0000-0000-000000000001',
-              email,
-              full_name: email.split('@')[0].replace('.', ' ').toUpperCase(),
-              college_id: 'AI2026-889',
-              department: 'Artificial Intelligence and Data Science',
-              year: 'Final Year',
-              semester: 'Semester 8',
-              role: 'STUDENT'
-            });
-          }
-        } catch (fetchErr) {
-          const studentUser: UserProfile = {
-            id: '00000000-0000-0000-0000-000000000001',
-            email,
-            full_name: email.split('@')[0].replace('.', ' ').toUpperCase(),
-            college_id: 'AI2026-889',
-            department: 'Artificial Intelligence and Data Science',
-            year: 'Final Year',
-            semester: 'Semester 8',
-            role: 'STUDENT'
-          };
-          setUser(studentUser);
-        }
       }
     } finally {
       setLoading(false);

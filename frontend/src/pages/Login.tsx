@@ -26,7 +26,7 @@ export const Login: React.FC = () => {
     setError('');
 
     try {
-      await login(email, roleTab);
+      await login(email, password, roleTab);
       if (roleTab === 'ADMIN') {
         navigate('/admin');
       } else {
