@@ -12,10 +12,10 @@ import {
   ProgressSummary
 } from '../types';
 
-const API_BASE_URL = '/api';
+const API_BASE_URL = (import.meta.env.VITE_API_URL || '/api').replace(/\/$/, '');
 
 const getHeaders = () => {
-  const token = localStorage.getItem('auth_token') || 'demo-bearer-token';
+  const token = localStorage.getItem('auth_token') || 'admin-demo-token';
   return {
     'Content-Type': 'application/json',
     'Authorization': `Bearer ${token}`
@@ -23,11 +23,30 @@ const getHeaders = () => {
 };
 
 async function handleResponse<T>(res: Response): Promise<T> {
+  const contentType = res.headers.get('content-type') || '';
   if (!res.ok) {
-    const errorData = await res.json().catch(() => ({ error: res.statusText }));
-    throw new Error(errorData.error || errorData.message || res.statusText || 'API Request Failed');
+    let errorMsg = res.statusText || 'API Request Failed';
+    if (contentType.includes('application/json')) {
+      const errorData = await res.json().catch(() => ({}));
+      errorMsg = errorData.error || errorData.message || errorMsg;
+    } else {
+      const text = await res.text().catch(() => '');
+      if (text.includes('<!DOCTYPE html>')) {
+        errorMsg = 'Backend API server URL not configured on Vercel. Please set VITE_API_URL environment variable pointing to your Render backend.';
+      }
+    }
+    throw new Error(errorMsg);
   }
-  return res.json();
+
+  if (contentType.includes('application/json')) {
+    return res.json();
+  }
+
+  const text = await res.text();
+  if (text.includes('<!DOCTYPE html>')) {
+    throw new Error('Received HTML index.html instead of JSON API response. Please configure VITE_API_URL on Vercel.');
+  }
+  return text as any;
 }
 
 export const api = {
