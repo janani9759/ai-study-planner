@@ -1,20 +1,11 @@
 import { Response } from 'express';
 import { AuthRequest } from '../middleware/auth';
-import { supabase } from '../config/supabase';
+import { dataStore } from '../services/dataStore';
 
 export const getSubjects = async (req: AuthRequest, res: Response) => {
   try {
-    const userId = req.user?.id;
-    const { data: subjects, error } = await supabase
-      .from('subjects')
-      .select('*, topics(*)')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false });
-
-    if (error || !subjects) {
-      return res.status(200).json([]);
-    }
-
+    const userId = req.user?.id || '00000000-0000-0000-0000-000000000001';
+    const subjects = dataStore.getSubjects(userId);
     res.status(200).json(subjects);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -23,41 +14,9 @@ export const getSubjects = async (req: AuthRequest, res: Response) => {
 
 export const createSubject = async (req: AuthRequest, res: Response) => {
   try {
-    const userId = req.user?.id;
-    const { name, code, description, difficulty, priority, exam_date, target_score } = req.body;
-
-    const { data, error } = await supabase
-      .from('subjects')
-      .insert({
-        user_id: userId,
-        name,
-        code: code || name.slice(0, 3).toUpperCase() + '-101',
-        description: description || '',
-        difficulty: difficulty || 'Medium',
-        priority: priority || 'Medium',
-        exam_date: exam_date || null,
-        target_score: target_score || 85,
-        progress: 0
-      })
-      .select()
-      .single();
-
-    if (error) {
-      return res.status(200).json({
-        id: 'sub-' + Date.now(),
-        user_id: userId,
-        name,
-        code,
-        description,
-        difficulty,
-        priority,
-        exam_date,
-        target_score: target_score || 85,
-        progress: 0
-      });
-    }
-
-    res.status(201).json(data);
+    const userId = req.user?.id || '00000000-0000-0000-0000-000000000001';
+    const newSub = dataStore.createSubject(userId, req.body);
+    res.status(201).json(newSub);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
@@ -66,20 +25,8 @@ export const createSubject = async (req: AuthRequest, res: Response) => {
 export const updateSubject = async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
-    const updates = req.body;
-
-    const { data, error } = await supabase
-      .from('subjects')
-      .update(updates)
-      .eq('id', id)
-      .select()
-      .single();
-
-    if (error) {
-      return res.status(200).json({ id, ...updates });
-    }
-
-    res.status(200).json(data);
+    const updated = dataStore.updateSubject(id, req.body);
+    res.status(200).json(updated || { id, ...req.body });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
@@ -88,7 +35,7 @@ export const updateSubject = async (req: AuthRequest, res: Response) => {
 export const deleteSubject = async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
-    await supabase.from('subjects').delete().eq('id', id);
+    dataStore.deleteSubject(id);
     res.status(200).json({ message: 'Subject deleted successfully' });
   } catch (err: any) {
     res.status(500).json({ error: err.message });

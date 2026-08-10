@@ -1,24 +1,12 @@
 import { Response } from 'express';
 import { AuthRequest } from '../middleware/auth';
-import { supabase } from '../config/supabase';
+import { dataStore } from '../services/dataStore';
 
 export const getTopics = async (req: AuthRequest, res: Response) => {
   try {
-    const userId = req.user?.id;
+    const userId = req.user?.id || '00000000-0000-0000-0000-000000000001';
     const { subjectId } = req.query;
-
-    let query = supabase.from('topics').select('*, subjects(name, code)').eq('user_id', userId);
-
-    if (subjectId) {
-      query = query.eq('subject_id', subjectId);
-    }
-
-    const { data: topics, error } = await query;
-
-    if (error || !topics) {
-      return res.status(200).json([]);
-    }
-
+    const topics = dataStore.getTopics(userId, subjectId ? String(subjectId) : undefined);
     res.status(200).json(topics);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -27,39 +15,9 @@ export const getTopics = async (req: AuthRequest, res: Response) => {
 
 export const createTopic = async (req: AuthRequest, res: Response) => {
   try {
-    const userId = req.user?.id;
-    const { subject_id, name, description, difficulty, status, confidence } = req.body;
-
-    const { data, error } = await supabase
-      .from('topics')
-      .insert({
-        user_id: userId,
-        subject_id,
-        name,
-        description: description || '',
-        difficulty: difficulty || 'Medium',
-        status: status || 'Not Started',
-        progress: status === 'Completed' ? 100 : (status === 'In Progress' ? 50 : 0),
-        confidence: confidence || 'Average'
-      })
-      .select()
-      .single();
-
-    if (error) {
-      return res.status(200).json({
-        id: 'top-' + Date.now(),
-        user_id: userId,
-        subject_id,
-        name,
-        description,
-        difficulty,
-        status,
-        progress: 0,
-        confidence
-      });
-    }
-
-    res.status(201).json(data);
+    const userId = req.user?.id || '00000000-0000-0000-0000-000000000001';
+    const newTopic = dataStore.createTopic(userId, req.body);
+    res.status(201).json(newTopic);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
@@ -68,24 +26,8 @@ export const createTopic = async (req: AuthRequest, res: Response) => {
 export const updateTopic = async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
-    const updates = req.body;
-    if (updates.status === 'Completed') {
-      updates.progress = 100;
-    }
-    updates.last_studied_at = new Date().toISOString();
-
-    const { data, error } = await supabase
-      .from('topics')
-      .update(updates)
-      .eq('id', id)
-      .select()
-      .single();
-
-    if (error) {
-      return res.status(200).json({ id, ...updates });
-    }
-
-    res.status(200).json(data);
+    const updated = dataStore.updateTopic(id, req.body);
+    res.status(200).json(updated || { id, ...req.body });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
@@ -94,7 +36,7 @@ export const updateTopic = async (req: AuthRequest, res: Response) => {
 export const deleteTopic = async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
-    await supabase.from('topics').delete().eq('id', id);
+    dataStore.deleteTopic(id);
     res.status(200).json({ message: 'Topic deleted successfully' });
   } catch (err: any) {
     res.status(500).json({ error: err.message });

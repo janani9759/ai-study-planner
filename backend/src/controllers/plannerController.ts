@@ -1,11 +1,11 @@
 import { Response } from 'express';
 import { AuthRequest } from '../middleware/auth';
 import { geminiService } from '../services/geminiService';
-import { supabase } from '../config/supabase';
+import { dataStore } from '../services/dataStore';
 
 export const generatePlan = async (req: AuthRequest, res: Response) => {
   try {
-    const userId = req.user?.id;
+    const userId = req.user?.id || '00000000-0000-0000-0000-000000000001';
     const { subjects, weakTopics, exams, dailyAvailableHours, preferredStudyTime, comfortFeeling, comfortDifficulty, goals } = req.body;
 
     const payload = {
@@ -22,41 +22,8 @@ export const generatePlan = async (req: AuthRequest, res: Response) => {
     // Call Gemini API server-side
     const aiResult = await geminiService.generateStudyPlan(payload);
 
-    // Save study plan in Supabase database
-    try {
-      const { data: studyPlan } = await supabase
-        .from('study_plans')
-        .insert({
-          user_id: userId,
-          title: aiResult.planTitle || 'AI Custom Study Plan',
-          raw_ai_response: aiResult
-        })
-        .select()
-        .single();
-
-      // Insert tasks into study_tasks table if plan generated
-      if (studyPlan && aiResult.plan) {
-        for (const day of aiResult.plan) {
-          for (const task of day.tasks || []) {
-            await supabase.from('study_tasks').insert({
-              plan_id: studyPlan.id,
-              user_id: userId,
-              task_date: day.date || new Date().toISOString().split('T')[0],
-              start_time: task.startTime || '18:00',
-              duration_minutes: task.durationMinutes || 60,
-              subject_name: task.subject || 'General Study',
-              topic_name: task.topic || 'Review',
-              task_type: task.type || 'Study',
-              priority: task.priority || 'Medium',
-              reason: task.reason || 'AI Schedule',
-              status: 'Pending'
-            });
-          }
-        }
-      }
-    } catch (dbErr) {
-      console.warn('DB Save plan warning (returning AI payload directly):', dbErr);
-    }
+    // Save study plan in DataStore & DB
+    dataStore.saveAIPlanTasks(userId, aiResult);
 
     res.status(200).json(aiResult);
   } catch (err: any) {
@@ -67,17 +34,8 @@ export const generatePlan = async (req: AuthRequest, res: Response) => {
 
 export const getPlanTasks = async (req: AuthRequest, res: Response) => {
   try {
-    const userId = req.user?.id;
-    const { data: tasks, error } = await supabase
-      .from('study_tasks')
-      .select('*')
-      .eq('user_id', userId)
-      .order('task_date', { ascending: true });
-
-    if (error || !tasks) {
-      return res.status(200).json([]);
-    }
-
+    const userId = req.user?.id || '00000000-0000-0000-0000-000000000001';
+    const tasks = dataStore.getTasks(userId);
     res.status(200).json(tasks);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -89,18 +47,8 @@ export const updateTaskStatus = async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
     const { status } = req.body;
 
-    const { data, error } = await supabase
-      .from('study_tasks')
-      .update({ status, updated_at: new Date().toISOString() })
-      .eq('id', id)
-      .select()
-      .single();
-
-    if (error) {
-      return res.status(200).json({ id, status });
-    }
-
-    res.status(200).json(data);
+    const updated = dataStore.updateTaskStatus(id, status);
+    res.status(200).json(updated || { id, status });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }

@@ -81,18 +81,37 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(adminUser);
         localStorage.setItem('auth_token', 'admin-demo-token');
       } else {
-        const studentUser: UserProfile = {
-          id: '00000000-0000-0000-0000-000000000001',
-          email,
-          full_name: email.split('@')[0].replace('.', ' ').toUpperCase(),
-          college_id: 'AI2026-889',
-          department: 'Artificial Intelligence and Data Science',
-          year: 'Final Year',
-          semester: 'Semester 8',
-          role: 'STUDENT'
-        };
-        setUser(studentUser);
         localStorage.setItem('auth_token', 'demo-bearer-token');
+        try {
+          const res = await api.getStudentMe();
+          if (res && res.profile) {
+            setUser(res.profile);
+            if (res.student) setStudent(res.student);
+          } else {
+            setUser({
+              id: '00000000-0000-0000-0000-000000000001',
+              email,
+              full_name: email.split('@')[0].replace('.', ' ').toUpperCase(),
+              college_id: 'AI2026-889',
+              department: 'Artificial Intelligence and Data Science',
+              year: 'Final Year',
+              semester: 'Semester 8',
+              role: 'STUDENT'
+            });
+          }
+        } catch (fetchErr) {
+          const studentUser: UserProfile = {
+            id: '00000000-0000-0000-0000-000000000001',
+            email,
+            full_name: email.split('@')[0].replace('.', ' ').toUpperCase(),
+            college_id: 'AI2026-889',
+            department: 'Artificial Intelligence and Data Science',
+            year: 'Final Year',
+            semester: 'Semester 8',
+            role: 'STUDENT'
+          };
+          setUser(studentUser);
+        }
       }
     } finally {
       setLoading(false);

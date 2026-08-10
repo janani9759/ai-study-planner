@@ -1,26 +1,25 @@
 import { Request, Response, NextFunction } from 'express';
 import { supabase } from '../config/supabase';
+import { dataStore, UserProfileData } from '../services/dataStore';
 
 export interface AuthRequest extends Request {
-  user?: {
-    id: string;
-    email: string;
-    role: 'STUDENT' | 'ADMIN' | 'DEPT_ADMIN';
-    full_name?: string;
-    department?: string;
-  };
+  user?: UserProfileData;
 }
 
 export const authenticate = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      req.user = {
+      const defaultUser = dataStore.findUserById('00000000-0000-0000-0000-000000000001');
+      req.user = defaultUser || {
         id: '00000000-0000-0000-0000-000000000001',
         email: 'sanjay.kumar@college.edu',
         role: 'STUDENT',
         full_name: 'Sanjay Kumar',
-        department: 'Artificial Intelligence and Data Science'
+        college_id: 'AI2026-889',
+        department: 'Artificial Intelligence and Data Science',
+        year: 'Final Year',
+        semester: 'Semester 8'
       };
       return next();
     }
@@ -28,12 +27,16 @@ export const authenticate = async (req: AuthRequest, res: Response, next: NextFu
     const token = authHeader.split(' ')[1];
 
     if (token === 'admin-demo-token') {
-      req.user = {
+      const adminUser = dataStore.findUserById('00000000-0000-0000-0000-000000000002');
+      req.user = adminUser || {
         id: '00000000-0000-0000-0000-000000000002',
         email: 'admin@college.edu',
         role: 'ADMIN',
         full_name: 'Academic Administrator',
-        department: 'Academic Affairs'
+        college_id: 'ADM-001',
+        department: 'Academic Affairs',
+        year: 'Faculty',
+        semester: 'N/A'
       };
       return next();
     }
@@ -45,39 +48,53 @@ export const authenticate = async (req: AuthRequest, res: Response, next: NextFu
         email: `deptadmin.${deptName.toLowerCase().replace(/\s+/g, '')}@college.edu`,
         role: 'DEPT_ADMIN',
         full_name: `${deptName} Head`,
-        department: deptName
+        college_id: `DEPT-${deptName.slice(0, 3).toUpperCase()}-01`,
+        department: deptName,
+        year: 'Faculty Head',
+        semester: 'N/A'
       };
       return next();
     }
 
-    // Supabase auth token verification
-    const { data: { user }, error } = await supabase.auth.getUser(token);
+    if (token.startsWith('user-token-')) {
+      const userId = token.replace('user-token-', '');
+      const found = dataStore.findUserById(userId);
+      if (found) {
+        req.user = found;
+        return next();
+      }
+    }
 
-    if (error || !user) {
-      req.user = {
-        id: '00000000-0000-0000-0000-000000000001',
-        email: 'sanjay.kumar@college.edu',
+    // Attempt Supabase lookup if token is a valid Supabase JWT or email
+    const { data: { user } } = await supabase.auth.getUser(token).catch(() => ({ data: { user: null }, error: true }));
+
+    if (user) {
+      const foundInStore = dataStore.findUserById(user.id);
+      req.user = foundInStore || {
+        id: user.id,
+        email: user.email || '',
         role: 'STUDENT',
-        full_name: 'Sanjay Kumar',
-        department: 'Artificial Intelligence and Data Science'
+        full_name: 'Student',
+        college_id: 'ID-GENERIC',
+        department: 'General Science',
+        year: '1st Year',
+        semester: 'Semester 1'
       };
       return next();
     }
 
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', user.id)
-      .single();
-
-    req.user = {
-      id: user.id,
-      email: user.email || '',
-      role: (profile?.role as any) || 'STUDENT',
-      full_name: profile?.full_name || 'Student',
-      department: profile?.department || 'General'
+    // Default fallback to Sanjay Kumar
+    const defaultUser = dataStore.findUserById('00000000-0000-0000-0000-000000000001');
+    req.user = defaultUser || {
+      id: '00000000-0000-0000-0000-000000000001',
+      email: 'sanjay.kumar@college.edu',
+      role: 'STUDENT',
+      full_name: 'Sanjay Kumar',
+      college_id: 'AI2026-889',
+      department: 'Artificial Intelligence and Data Science',
+      year: 'Final Year',
+      semester: 'Semester 8'
     };
-
     next();
   } catch (err) {
     console.error('Authentication Middleware Error:', err);

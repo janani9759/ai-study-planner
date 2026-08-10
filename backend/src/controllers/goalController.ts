@@ -1,20 +1,11 @@
 import { Response } from 'express';
 import { AuthRequest } from '../middleware/auth';
-import { supabase } from '../config/supabase';
+import { dataStore } from '../services/dataStore';
 
 export const getGoals = async (req: AuthRequest, res: Response) => {
   try {
-    const userId = req.user?.id;
-    const { data: goals, error } = await supabase
-      .from('goals')
-      .select('*')
-      .eq('user_id', userId)
-      .order('target_date', { ascending: true });
-
-    if (error || !goals) {
-      return res.status(200).json([]);
-    }
-
+    const userId = req.user?.id || '00000000-0000-0000-0000-000000000001';
+    const goals = dataStore.getGoals(userId);
     res.status(200).json(goals);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -23,36 +14,9 @@ export const getGoals = async (req: AuthRequest, res: Response) => {
 
 export const createGoal = async (req: AuthRequest, res: Response) => {
   try {
-    const userId = req.user?.id;
-    const { title, description, target_date, target_value } = req.body;
-
-    const { data, error } = await supabase
-      .from('goals')
-      .insert({
-        user_id: userId,
-        title,
-        description: description || '',
-        target_date,
-        target_value: target_value || 100,
-        current_value: 0,
-        status: 'Active'
-      })
-      .select()
-      .single();
-
-    if (error) {
-      return res.status(200).json({
-        id: 'g-' + Date.now(),
-        title,
-        description,
-        target_date,
-        target_value: target_value || 100,
-        current_value: 0,
-        status: 'Active'
-      });
-    }
-
-    res.status(201).json(data);
+    const userId = req.user?.id || '00000000-0000-0000-0000-000000000001';
+    const newGoal = dataStore.createGoal(userId, req.body);
+    res.status(201).json(newGoal);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
@@ -61,24 +25,8 @@ export const createGoal = async (req: AuthRequest, res: Response) => {
 export const updateGoal = async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
-    const updates = req.body;
-
-    if (updates.current_value >= updates.target_value) {
-      updates.status = 'Completed';
-    }
-
-    const { data, error } = await supabase
-      .from('goals')
-      .update(updates)
-      .eq('id', id)
-      .select()
-      .single();
-
-    if (error) {
-      return res.status(200).json({ id, ...updates });
-    }
-
-    res.status(200).json(data);
+    const updated = dataStore.updateGoal(id, req.body);
+    res.status(200).json(updated || { id, ...req.body });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
@@ -87,7 +35,7 @@ export const updateGoal = async (req: AuthRequest, res: Response) => {
 export const deleteGoal = async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
-    await supabase.from('goals').delete().eq('id', id);
+    dataStore.deleteGoal(id);
     res.status(200).json({ message: 'Goal deleted' });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
