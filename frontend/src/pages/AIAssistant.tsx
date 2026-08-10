@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { usePlanner } from '../contexts/PlannerContext';
 import { api } from '../services/api';
-import { MessageSquare, Send, Sparkles, User, Bot } from 'lucide-react';
+import { MessageSquare, Send, Sparkles, User, Bot, Key } from 'lucide-react';
+import { AISettingsModal } from '../components/AISettingsModal';
 
 interface ChatMessage {
   id: string;
@@ -19,13 +20,14 @@ export const AIAssistant: React.FC = () => {
     {
       id: '1',
       sender: 'AI',
-      text: `Hello ${user?.full_name || 'Student'}! I am your AI Study Assistant powered by Google Gemini. How can I help you master your subjects today?`,
+      text: `Hello ${user?.full_name || 'Student'}! I am your AI Study Assistant powered by Google Gemini. Ask me any question about your courses, formulas, exam strategy, or study schedules!`,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     }
   ]);
 
   const [inputMessage, setInputMessage] = useState('');
   const [loading, setLoading] = useState(false);
+  const [aiModalOpen, setAiModalOpen] = useState(false);
 
   const quickPrompts = [
     "Explain integration by parts step-by-step.",
@@ -85,9 +87,17 @@ export const AIAssistant: React.FC = () => {
             <h1 className="text-base font-bold flex items-center">
               AI Study Assistant <Sparkles size={14} className="ml-1.5 text-blue-400" />
             </h1>
-            <p className="text-[11px] text-slate-400">Google Gemini Server-Side AI Engine • Online 24/7</p>
+            <p className="text-[11px] text-slate-400">Google Gemini 1.5 Flash AI Engine • Online 24/7</p>
           </div>
         </div>
+
+        <button
+          onClick={() => setAiModalOpen(true)}
+          className="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold px-3 py-1.5 rounded-xl border border-slate-700 flex items-center space-x-1.5 transition"
+        >
+          <Key size={14} className="text-blue-400" />
+          <span>⚙️ Gemini Key</span>
+        </button>
       </div>
 
       {/* Messages Scroll Container */}
@@ -121,9 +131,9 @@ export const AIAssistant: React.FC = () => {
         ))}
 
         {loading && (
-          <div className="flex items-center space-x-2 text-xs text-slate-400 italic bg-white p-3 rounded-2xl w-fit border border-slate-200">
-            <Sparkles size={14} className="animate-spin text-blue-600" />
-            <span>AI Tutor thinking...</span>
+          <div className="flex items-center space-x-2 text-xs text-slate-500 font-medium bg-white p-3.5 rounded-2xl w-fit border border-slate-200 shadow-xs animate-pulse">
+            <Sparkles size={16} className="animate-spin text-blue-600" />
+            <span>Google Gemini AI is thinking...</span>
           </div>
         )}
       </div>
@@ -159,6 +169,8 @@ export const AIAssistant: React.FC = () => {
           <Send size={18} />
         </button>
       </div>
+
+      <AISettingsModal isOpen={aiModalOpen} onClose={() => setAiModalOpen(false)} />
     </div>
   );
 };

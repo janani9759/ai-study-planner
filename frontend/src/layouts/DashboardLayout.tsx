@@ -25,12 +25,15 @@ import {
   ShieldAlert
 } from 'lucide-react';
 
+import { AISettingsModal } from '../components/AISettingsModal';
+
 export const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [aiSettingsOpen, setAiSettingsOpen] = useState(false);
 
   const navItems = [
     { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
@@ -95,6 +98,16 @@ export const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ child
             <button className="relative text-slate-300 hover:text-white p-2 rounded-lg hover:bg-slate-800 transition">
               <Bell size={20} />
               <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-blue-500 rounded-full"></span>
+            </button>
+
+            {/* AI Key Settings Trigger */}
+            <button
+              onClick={() => setAiSettingsOpen(true)}
+              className="flex items-center space-x-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white px-3 py-1.5 rounded-lg text-xs font-semibold shadow-xs transition"
+              title="Configure Google Gemini API Key"
+            >
+              <Sparkles size={14} />
+              <span className="hidden sm:inline">⚙️ AI Key</span>
             </button>
 
             <div className="relative">
@@ -218,6 +231,8 @@ export const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ child
           <div className="max-w-7xl mx-auto space-y-6">{children}</div>
         </main>
       </div>
+
+      <AISettingsModal isOpen={aiSettingsOpen} onClose={() => setAiSettingsOpen(false)} />
     </div>
   );
 };

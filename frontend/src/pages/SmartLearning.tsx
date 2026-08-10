@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { usePlanner } from '../contexts/PlannerContext';
 import { api } from '../services/api';
-import { Sparkles, BookOpen, Lightbulb, CheckCircle2, HelpCircle, ArrowRight } from 'lucide-react';
+import { Sparkles, BookOpen, Lightbulb, CheckCircle2, HelpCircle, ArrowRight, Key } from 'lucide-react';
+import { AISettingsModal } from '../components/AISettingsModal';
 
 export const SmartLearning: React.FC = () => {
   const { subjects, topics } = usePlanner();
@@ -12,6 +13,7 @@ export const SmartLearning: React.FC = () => {
 
   const [loading, setLoading] = useState(false);
   const [aiData, setAiData] = useState<any | null>(null);
+  const [aiModalOpen, setAiModalOpen] = useState(false);
 
   const handleFetchExplanation = async () => {
     setLoading(true);
@@ -40,6 +42,14 @@ export const SmartLearning: React.FC = () => {
           <h1 className="text-2xl font-bold text-slate-900 tracking-tight">AI Topic Explanation & Study Strategy</h1>
           <p className="text-xs text-slate-500">Get instant structured breakdowns, key concepts, formulas, and revision strategies</p>
         </div>
+
+        <button
+          onClick={() => setAiModalOpen(true)}
+          className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs px-3.5 py-2 rounded-xl border border-slate-200 flex items-center space-x-1.5 transition"
+        >
+          <Key size={14} className="text-blue-600" />
+          <span>⚙️ Gemini Key</span>
+        </button>
       </div>
 
       {/* Input Selection Box */}
@@ -90,13 +100,30 @@ export const SmartLearning: React.FC = () => {
           disabled={loading}
           className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-lg shadow-blue-600/25 flex items-center justify-center space-x-2 transition"
         >
-          <Sparkles size={18} />
+          <Sparkles size={18} className={loading ? 'animate-spin' : ''} />
           <span>{loading ? 'AI Tutor Generating Lesson...' : 'Generate AI Smart Explanation'}</span>
         </button>
       </div>
 
+      {/* Loading Indicator */}
+      {loading && (
+        <div className="bg-white rounded-3xl p-8 border border-blue-100 shadow-sm text-center space-y-4 fade-in">
+          <div className="w-12 h-12 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center mx-auto animate-spin">
+            <Sparkles size={24} />
+          </div>
+          <div>
+            <h3 className="text-sm font-bold text-slate-900">🤖 Gemini AI Generating Lesson Breakdown...</h3>
+            <p className="text-xs text-slate-500 mt-1">Analyzing {selectedTopic} in {selectedSubject} for confidence level "{confidence}"</p>
+          </div>
+          <div className="space-y-2 max-w-lg mx-auto">
+            <div className="h-3.5 bg-slate-100 rounded-full animate-pulse"></div>
+            <div className="h-3.5 bg-slate-100 rounded-full animate-pulse w-5/6 mx-auto"></div>
+          </div>
+        </div>
+      )}
+
       {/* AI Lesson Results */}
-      {aiData && (
+      {!loading && aiData && (
         <div className="space-y-6 fade-in">
           {/* Explanation Card */}
           <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm space-y-4">
@@ -138,6 +165,8 @@ export const SmartLearning: React.FC = () => {
           </div>
         </div>
       )}
+
+      <AISettingsModal isOpen={aiModalOpen} onClose={() => setAiModalOpen(false)} />
     </div>
   );
 };

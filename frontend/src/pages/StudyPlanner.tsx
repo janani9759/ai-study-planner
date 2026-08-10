@@ -71,6 +71,23 @@ export const StudyPlanner: React.FC = () => {
         </div>
       </div>
 
+      {/* Loading Indicator */}
+      {loading && (
+        <div className="bg-white rounded-3xl p-8 border border-blue-100 shadow-sm text-center space-y-4 fade-in">
+          <div className="w-12 h-12 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center mx-auto animate-spin">
+            <Sparkles size={24} />
+          </div>
+          <div>
+            <h3 className="text-sm font-bold text-slate-900">🤖 Gemini AI Generating Personalized Study Schedule...</h3>
+            <p className="text-xs text-slate-500 mt-1">Analyzing exam deadlines, topic difficulty, and daily capacity limits ({student?.daily_available_hours || 4}h/day)</p>
+          </div>
+          <div className="space-y-2 max-w-lg mx-auto">
+            <div className="h-3.5 bg-slate-100 rounded-full animate-pulse"></div>
+            <div className="h-3.5 bg-slate-100 rounded-full animate-pulse w-5/6 mx-auto"></div>
+          </div>
+        </div>
+      )}
+
       {/* AI Reschedule Banner */}
       {rescheduleResult && (
         <div className="bg-amber-50 border border-amber-200 rounded-3xl p-5 fade-in">

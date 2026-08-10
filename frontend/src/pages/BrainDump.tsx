@@ -57,13 +57,30 @@ export const BrainDump: React.FC = () => {
           disabled={loading}
           className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-lg shadow-blue-600/25 flex items-center justify-center space-x-2 transition"
         >
-          <Sparkles size={18} />
+          <Sparkles size={18} className={loading ? 'animate-spin' : ''} />
           <span>{loading ? 'AI Analyzing Brain Dump...' : 'Analyze with AI'}</span>
         </button>
       </div>
 
+      {/* Loading Indicator */}
+      {loading && (
+        <div className="bg-white rounded-3xl p-8 border border-blue-100 shadow-sm text-center space-y-4 fade-in">
+          <div className="w-12 h-12 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center mx-auto animate-spin">
+            <Sparkles size={24} />
+          </div>
+          <div>
+            <h3 className="text-sm font-bold text-slate-900">🤖 Gemini AI Parsing Brain Dump & Extracting Priorities...</h3>
+            <p className="text-xs text-slate-500 mt-1">Analyzing your raw notes to build actionable study tasks and detected priorities</p>
+          </div>
+          <div className="space-y-2 max-w-lg mx-auto">
+            <div className="h-3.5 bg-slate-100 rounded-full animate-pulse"></div>
+            <div className="h-3.5 bg-slate-100 rounded-full animate-pulse w-5/6 mx-auto"></div>
+          </div>
+        </div>
+      )}
+
       {/* Analysis Results */}
-      {analysis && (
+      {!loading && analysis && (
         <div className="space-y-6 fade-in">
           {/* AI Summary Banner */}
           <div className="bg-gradient-to-r from-slate-900 to-blue-950 text-white rounded-3xl p-6 shadow-lg border border-slate-800 space-y-2">
