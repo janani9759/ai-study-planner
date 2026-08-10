@@ -49,37 +49,53 @@ export const AISettingsModal: React.FC<AISettingsModalProps> = ({ isOpen, onClos
     setStatusMessage('');
     setIsError(false);
 
-    try {
-      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${trimmed}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: 'Reply with the single word SUCCESS.' }] }]
-        })
-      });
+    const modelsToTry = [
+      'gemini-1.5-flash',
+      'gemini-1.5-flash-latest',
+      'gemini-2.0-flash',
+      'gemini-1.5-pro',
+      'gemini-pro'
+    ];
 
-      if (res.ok) {
-        const data = await res.json();
-        const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-        if (text) {
-          localStorage.setItem('user_gemini_api_key', trimmed);
-          setStatusMessage('✅ Gemini 1.5 Flash API Key Verified & Activated!');
-          setIsError(false);
+    let successModel = '';
+    let lastError = '';
+
+    for (const model of modelsToTry) {
+      try {
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${trimmed}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: 'Reply with the single word SUCCESS.' }] }]
+          })
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+          if (text) {
+            successModel = model;
+            break;
+          }
         } else {
-          setIsError(true);
-          setStatusMessage('Gemini API returned an empty response. Check key permissions.');
+          const errData = await res.json().catch(() => ({}));
+          lastError = errData.error?.message || `HTTP ${res.status}`;
         }
-      } else {
-        const errData = await res.json().catch(() => ({}));
-        setIsError(true);
-        setStatusMessage(`API Error (${res.status}): ${errData.error?.message || 'Invalid Gemini API Key'}`);
+      } catch (e: any) {
+        lastError = e.message || 'Network Connection Error';
       }
-    } catch (e: any) {
-      setIsError(true);
-      setStatusMessage(`Network Error: ${e.message || 'Failed to connect to Google Gemini API'}`);
-    } finally {
-      setTesting(false);
     }
+
+    if (successModel) {
+      localStorage.setItem('user_gemini_api_key', trimmed);
+      localStorage.setItem('user_gemini_working_model', successModel);
+      setStatusMessage(`✅ Gemini API Key Verified & Activated! (Model: ${successModel})`);
+      setIsError(false);
+    } else {
+      setIsError(true);
+      setStatusMessage(`API Connection Error: ${lastError || 'Invalid Key or Model unsupported'}`);
+    }
+    setTesting(false);
   };
 
   return (

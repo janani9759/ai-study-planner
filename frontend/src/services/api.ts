@@ -43,20 +43,31 @@ async function callGeminiAPI(prompt: string): Promise<string> {
               (window as any).GEMINI_API_KEY ||
               '';
   if (!key) return '';
-  try {
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }]
-      })
-    });
-    if (res.ok) {
-      const data = await res.json();
-      return data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+
+  const savedModel = localStorage.getItem('user_gemini_working_model');
+  const models = savedModel ? [savedModel, 'gemini-1.5-flash', 'gemini-1.5-flash-latest', 'gemini-2.0-flash', 'gemini-1.5-pro']
+                            : ['gemini-1.5-flash', 'gemini-1.5-flash-latest', 'gemini-2.0-flash', 'gemini-1.5-pro', 'gemini-pro'];
+
+  for (const model of models) {
+    try {
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }]
+        })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+        if (text) {
+          localStorage.setItem('user_gemini_working_model', model);
+          return text;
+        }
+      }
+    } catch (e) {
+      console.warn(`Gemini API call warning for model ${model}:`, e);
     }
-  } catch (e) {
-    console.warn('Gemini API call warning:', e);
   }
   return '';
 }
