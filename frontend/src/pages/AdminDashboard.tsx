@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
-import { ShieldAlert, Users, Calendar, BarChart3, Cpu, Plus, CheckCircle2, Clock, BookOpen, UserCheck } from 'lucide-react';
+import { ShieldAlert, Users, Calendar, BarChart3, Cpu, Plus, CheckCircle2, Clock, BookOpen, UserCheck, UserPlus } from 'lucide-react';
 
 export const AdminDashboard: React.FC = () => {
   const [data, setData] = useState<any | null>(null);
@@ -8,11 +8,23 @@ export const AdminDashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   // Modals State
+  const [createStudentModal, setCreateStudentModal] = useState(false);
   const [createDeptAdminModal, setCreateDeptAdminModal] = useState(false);
   const [allocateScheduleModal, setAllocateScheduleModal] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState('');
   const [isError, setIsError] = useState(false);
+
+  // Student Creation Form
+  const [studentForm, setStudentForm] = useState({
+    full_name: '',
+    email: '',
+    password: '',
+    college_id: '',
+    department: 'Artificial Intelligence and Data Science',
+    year: 'Final Year',
+    semester: 'Semester 8'
+  });
 
   // Department Admin Form
   const [deptAdminForm, setDeptAdminForm] = useState({
@@ -53,6 +65,36 @@ export const AdminDashboard: React.FC = () => {
   useEffect(() => {
     loadData();
   }, []);
+
+  const handleCreateStudent = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
+    setMessage('');
+    setIsError(false);
+    try {
+      const res = await api.createAdminStudent(studentForm);
+      setMessage(res.message || `Student ${studentForm.full_name} created successfully!`);
+      setStudentForm({
+        full_name: '',
+        email: '',
+        password: '',
+        college_id: '',
+        department: 'Artificial Intelligence and Data Science',
+        year: 'Final Year',
+        semester: 'Semester 8'
+      });
+      await loadData();
+      setTimeout(() => {
+        setCreateStudentModal(false);
+        setMessage('');
+      }, 1500);
+    } catch (err: any) {
+      setIsError(true);
+      setMessage(err.message || 'Failed to create student');
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   const handleCreateDeptAdmin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -120,6 +162,14 @@ export const AdminDashboard: React.FC = () => {
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
+          <button
+            onClick={() => setCreateStudentModal(true)}
+            className="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs px-4 py-2.5 rounded-xl shadow-md flex items-center space-x-1.5 transition"
+          >
+            <UserPlus size={16} />
+            <span>+ Create New Student</span>
+          </button>
+
           <button
             onClick={() => setCreateDeptAdminModal(true)}
             className="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs px-4 py-2.5 rounded-xl shadow-md flex items-center space-x-1.5 transition"
@@ -199,6 +249,106 @@ export const AdminDashboard: React.FC = () => {
         )}
       </div>
 
+      {/* Modal: Create New Student */}
+      {createStudentModal && (
+        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-6 sm:p-8 w-full max-w-md shadow-2xl border border-slate-200 fade-in">
+            <h2 className="text-xl font-bold text-slate-900 mb-1">Create New Student</h2>
+            <p className="text-xs text-slate-500 mb-4">Provision a new student account to the portal.</p>
+
+            {message && (
+              <div className={`mb-4 p-3 ${isError ? 'bg-rose-50 border-rose-200 text-rose-800' : 'bg-emerald-50 border-emerald-200 text-emerald-800'} border text-xs rounded-xl flex items-center`}>
+                <CheckCircle2 size={16} className={`mr-2 ${isError ? 'text-rose-600' : 'text-emerald-600'}`} />
+                <span>{message}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleCreateStudent} className="space-y-3">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Full Name</label>
+                <input
+                  type="text"
+                  value={studentForm.full_name}
+                  onChange={(e) => setStudentForm({ ...studentForm, full_name: e.target.value })}
+                  placeholder="e.g. Rahul Sharma"
+                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-900"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Email</label>
+                <input
+                  type="email"
+                  value={studentForm.email}
+                  onChange={(e) => setStudentForm({ ...studentForm, email: e.target.value })}
+                  placeholder="rahul.sharma@college.edu"
+                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-900"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">College Roll ID</label>
+                  <input
+                    type="text"
+                    value={studentForm.college_id}
+                    onChange={(e) => setStudentForm({ ...studentForm, college_id: e.target.value })}
+                    placeholder="AI2026-901"
+                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-900"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Password</label>
+                  <input
+                    type="password"
+                    value={studentForm.password}
+                    onChange={(e) => setStudentForm({ ...studentForm, password: e.target.value })}
+                    placeholder="••••••••"
+                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-900"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Department</label>
+                <select
+                  value={studentForm.department}
+                  onChange={(e) => setStudentForm({ ...studentForm, department: e.target.value })}
+                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-900"
+                >
+                  <option value="Artificial Intelligence and Data Science">Artificial Intelligence and Data Science</option>
+                  <option value="Computer Science and Engineering">Computer Science and Engineering</option>
+                  <option value="Information Technology">Information Technology</option>
+                  <option value="Electronics and Communication">Electronics and Communication</option>
+                </select>
+              </div>
+
+              <div className="flex justify-end space-x-2 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setCreateStudentModal(false)}
+                  className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="px-5 py-2 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-md"
+                >
+                  {submitting ? 'Creating...' : 'Save Student'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* Modal: Create Department-Wise Admin */}
       {createDeptAdminModal && (
         <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4">
@@ -251,17 +401,16 @@ export const AdminDashboard: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Assigned Department</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Target Department</label>
                 <select
                   value={deptAdminForm.department}
                   onChange={(e) => setDeptAdminForm({ ...deptAdminForm, department: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-900"
+                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-900"
                 >
-                  <option value="Artificial Intelligence and Data Science">Artificial Intelligence & Data Science</option>
-                  <option value="Computer Science and Engineering">Computer Science & Engineering</option>
+                  <option value="Artificial Intelligence and Data Science">Artificial Intelligence and Data Science</option>
+                  <option value="Computer Science and Engineering">Computer Science and Engineering</option>
                   <option value="Information Technology">Information Technology</option>
-                  <option value="Electronics & Communication">Electronics & Communication</option>
-                  <option value="Mechanical Engineering">Mechanical Engineering</option>
+                  <option value="Electronics and Communication">Electronics and Communication</option>
                 </select>
               </div>
 
@@ -276,9 +425,9 @@ export const AdminDashboard: React.FC = () => {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="px-5 py-2.5 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white shadow-md"
+                  className="px-5 py-2 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white shadow-md"
                 >
-                  {submitting ? 'Creating...' : 'Provision Dept Admin'}
+                  {submitting ? 'Creating...' : 'Create Dept Admin'}
                 </button>
               </div>
             </form>
@@ -286,33 +435,32 @@ export const AdminDashboard: React.FC = () => {
         </div>
       )}
 
-      {/* Modal: Allocate Schedule for Department */}
+      {/* Modal: Allocate Department Schedule */}
       {allocateScheduleModal && (
         <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl p-6 sm:p-8 w-full max-w-lg shadow-2xl border border-slate-200 fade-in">
-            <h2 className="text-xl font-bold text-slate-900 mb-1">Allocate Department Study Schedule</h2>
-            <p className="text-xs text-slate-500 mb-4">Assign mandatory tasks to all students in a department.</p>
+          <div className="bg-white rounded-3xl p-6 sm:p-8 w-full max-w-md shadow-2xl border border-slate-200 fade-in space-y-4">
+            <h2 className="text-xl font-bold text-slate-900">Allocate Department Schedule</h2>
+            <p className="text-xs text-slate-500">Push study tasks & revision slots directly to all students in a department.</p>
 
             {message && (
-              <div className={`mb-4 p-3 ${isError ? 'bg-rose-50 border-rose-200 text-rose-800' : 'bg-blue-50 border-blue-200 text-blue-800'} border text-xs rounded-xl flex items-center`}>
-                <CheckCircle2 size={16} className={`mr-2 ${isError ? 'text-rose-600' : 'text-blue-600'}`} />
+              <div className={`p-3 ${isError ? 'bg-rose-50 text-rose-800 border-rose-200' : 'bg-emerald-50 text-emerald-800 border-emerald-200'} border text-xs rounded-xl flex items-center`}>
+                <CheckCircle2 size={16} className={`mr-2 ${isError ? 'text-rose-600' : 'text-emerald-600'}`} />
                 <span>{message}</span>
               </div>
             )}
 
-            <form onSubmit={handleAllocateSchedule} className="space-y-4">
+            <form onSubmit={handleAllocateSchedule} className="space-y-3">
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">Target Department</label>
                 <select
                   value={scheduleForm.department}
                   onChange={(e) => setScheduleForm({ ...scheduleForm, department: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-900"
+                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-900"
                 >
-                  <option value="Artificial Intelligence and Data Science">Artificial Intelligence & Data Science</option>
-                  <option value="Computer Science and Engineering">Computer Science & Engineering</option>
+                  <option value="Artificial Intelligence and Data Science">Artificial Intelligence and Data Science</option>
+                  <option value="Computer Science and Engineering">Computer Science and Engineering</option>
                   <option value="Information Technology">Information Technology</option>
-                  <option value="Electronics & Communication">Electronics & Communication</option>
-                  <option value="Mechanical Engineering">Mechanical Engineering</option>
+                  <option value="Electronics and Communication">Electronics and Communication</option>
                 </select>
               </div>
 
@@ -323,54 +471,41 @@ export const AdminDashboard: React.FC = () => {
                     type="text"
                     value={scheduleForm.subject_name}
                     onChange={(e) => setScheduleForm({ ...scheduleForm, subject_name: e.target.value })}
-                    placeholder="e.g. Mathematics"
                     className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-900"
                     required
                   />
                 </div>
-
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">Topic Name</label>
                   <input
                     type="text"
                     value={scheduleForm.topic_name}
                     onChange={(e) => setScheduleForm({ ...scheduleForm, topic_name: e.target.value })}
-                    placeholder="e.g. Integration by Parts"
                     className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-900"
                     required
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Date</label>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Task Date</label>
                   <input
                     type="date"
                     value={scheduleForm.task_date}
                     onChange={(e) => setScheduleForm({ ...scheduleForm, task_date: e.target.value })}
-                    className="w-full px-2.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-900"
+                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-900"
                     required
                   />
                 </div>
-
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Time</label>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Start Time</label>
                   <input
                     type="time"
                     value={scheduleForm.start_time}
                     onChange={(e) => setScheduleForm({ ...scheduleForm, start_time: e.target.value })}
-                    className="w-full px-2.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-900"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Duration (m)</label>
-                  <input
-                    type="number"
-                    value={scheduleForm.duration_minutes}
-                    onChange={(e) => setScheduleForm({ ...scheduleForm, duration_minutes: Number(e.target.value) })}
-                    className="w-full px-2.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-900"
+                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-900"
+                    required
                   />
                 </div>
               </div>

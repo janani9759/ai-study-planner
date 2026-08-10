@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { usePlanner } from '../contexts/PlannerContext';
 import { api } from '../services/api';
 import { Sparkles, BookOpen, Lightbulb, CheckCircle2, HelpCircle, ArrowRight } from 'lucide-react';
@@ -6,8 +6,8 @@ import { Sparkles, BookOpen, Lightbulb, CheckCircle2, HelpCircle, ArrowRight } f
 export const SmartLearning: React.FC = () => {
   const { subjects, topics } = usePlanner();
 
-  const [selectedSubject, setSelectedSubject] = useState(subjects[0]?.name || 'Mathematics');
-  const [selectedTopic, setSelectedTopic] = useState(topics[0]?.name || 'Integration by Parts & Substitution');
+  const [selectedSubject, setSelectedSubject] = useState(subjects[0]?.name || 'Artificial Intelligence Principles');
+  const [selectedTopic, setSelectedTopic] = useState(topics[0]?.name || 'A* Search Algorithm & Heuristics');
   const [confidence, setConfidence] = useState('Weak');
 
   const [loading, setLoading] = useState(false);
@@ -24,6 +24,10 @@ export const SmartLearning: React.FC = () => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    handleFetchExplanation();
+  }, []);
 
   return (
     <div className="space-y-6 fade-in">
