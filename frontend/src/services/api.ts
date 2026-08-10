@@ -25,7 +25,7 @@ const getHeaders = () => {
 async function handleResponse<T>(res: Response): Promise<T> {
   if (!res.ok) {
     const errorData = await res.json().catch(() => ({ error: res.statusText }));
-    throw new Error(errorData.error || 'API Request Failed');
+    throw new Error(errorData.error || errorData.message || res.statusText || 'API Request Failed');
   }
   return res.json();
 }

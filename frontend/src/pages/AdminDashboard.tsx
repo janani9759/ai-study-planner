@@ -12,6 +12,7 @@ export const AdminDashboard: React.FC = () => {
   const [allocateScheduleModal, setAllocateScheduleModal] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState('');
+  const [isError, setIsError] = useState(false);
 
   // Department Admin Form
   const [deptAdminForm, setDeptAdminForm] = useState({
@@ -57,9 +58,10 @@ export const AdminDashboard: React.FC = () => {
     e.preventDefault();
     setSubmitting(true);
     setMessage('');
+    setIsError(false);
     try {
-      await api.createDeptAdmin(deptAdminForm);
-      setMessage(`Department Admin created for ${deptAdminForm.department}!`);
+      const res = await api.createDeptAdmin(deptAdminForm);
+      setMessage(res.message || `Department Admin created for ${deptAdminForm.department}!`);
       setDeptAdminForm({
         full_name: '',
         email: '',
@@ -72,6 +74,7 @@ export const AdminDashboard: React.FC = () => {
         setMessage('');
       }, 1500);
     } catch (err: any) {
+      setIsError(true);
       setMessage(err.message || 'Failed to create Department Admin');
     } finally {
       setSubmitting(false);
@@ -82,6 +85,7 @@ export const AdminDashboard: React.FC = () => {
     e.preventDefault();
     setSubmitting(true);
     setMessage('');
+    setIsError(false);
     try {
       const res = await api.allocateDepartmentSchedule(scheduleForm);
       setMessage(res.message || 'Schedule successfully allocated to department students!');
@@ -90,6 +94,7 @@ export const AdminDashboard: React.FC = () => {
         setMessage('');
       }, 1800);
     } catch (err: any) {
+      setIsError(true);
       setMessage(err.message || 'Failed to allocate schedule');
     } finally {
       setSubmitting(false);
@@ -202,8 +207,8 @@ export const AdminDashboard: React.FC = () => {
             <p className="text-xs text-slate-500 mb-4">Provision a faculty head for a specific department.</p>
 
             {message && (
-              <div className="mb-4 p-3 bg-blue-50 border border-blue-200 text-blue-800 text-xs rounded-xl flex items-center">
-                <CheckCircle2 size={16} className="mr-2 text-blue-600" />
+              <div className={`mb-4 p-3 ${isError ? 'bg-rose-50 border-rose-200 text-rose-800' : 'bg-blue-50 border-blue-200 text-blue-800'} border text-xs rounded-xl flex items-center`}>
+                <CheckCircle2 size={16} className={`mr-2 ${isError ? 'text-rose-600' : 'text-blue-600'}`} />
                 <span>{message}</span>
               </div>
             )}
@@ -289,8 +294,8 @@ export const AdminDashboard: React.FC = () => {
             <p className="text-xs text-slate-500 mb-4">Assign mandatory tasks to all students in a department.</p>
 
             {message && (
-              <div className="mb-4 p-3 bg-blue-50 border border-blue-200 text-blue-800 text-xs rounded-xl flex items-center">
-                <CheckCircle2 size={16} className="mr-2 text-blue-600" />
+              <div className={`mb-4 p-3 ${isError ? 'bg-rose-50 border-rose-200 text-rose-800' : 'bg-blue-50 border-blue-200 text-blue-800'} border text-xs rounded-xl flex items-center`}>
+                <CheckCircle2 size={16} className={`mr-2 ${isError ? 'text-rose-600' : 'text-blue-600'}`} />
                 <span>{message}</span>
               </div>
             )}
